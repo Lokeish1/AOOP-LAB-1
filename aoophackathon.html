@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Travel Itinerary Planner</title>
+  <style>
+    /* General styles for layout, containers, and buttons */
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 20px;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      width: 100%;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      margin-top: 20px;
+      background-color: #fff;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      padding: 10px 20px;
+      color: #fff;
+      background-color: #007bff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .switch-link {
+      text-align: center;
+      margin-top: 10px;
+      color: #007bff;
+      cursor: pointer;
+    }
+    .itinerary, .room-booking, .map-container {
+      display: none;
+    }
+    #map {
+      width: 100%;
+      height: 300px;
+      margin-top: 15px;
+      border-radius: 5px;
+    }
+  </style>
+  <script src="https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js"></script>
+</head>
+<body>
+
+  <!-- Login and Sign-Up Forms -->
+  <div class="container" id="signupContainer">
+    <h2>Sign Up</h2>
+    <form id="signupForm">
+      <div class="form-group">
+        <label for="signupUsername">Username:</label>
+        <input type="text" id="signupUsername" required>
+      </div>
+      <div class="form-group">
+        <label for="signupPassword">Password:</label>
+        <input type="password" id="signupPassword" required>
+      </div>
+      <button type="submit">Create Account</button>
+      <p class="switch-link" onclick="showLogin()">Already have an account? Login</p>
+    </form>
+  </div>
+
+  <div class="container" id="loginContainer" style="display: none;">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="loginUsername">Username:</label>
+        <input type="text" id="loginUsername" required>
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">Password:</label>
+        <input type="password" id="loginPassword" required>
+      </div>
+      <button type="submit">Login</button>
+      <p class="switch-link" onclick="showSignup()">Don't have an account? Sign Up</p>
+    </form>
+  </div>
+
+  <!-- Main Application -->
+  <div id="mainApp" style="display: none;">
+    <h1>Travel Itinerary Planner</h1>
+    <!-- Itinerary Form Section -->
+    <div class="container" id="formContainer">
+      <form id="itineraryForm">
+        <div class="form-group">
+          <label for="destination">Destination:</label>
+          <input type="text" id="destination" name="destination" required>
+        </div>
+        <div class="form-group">
+          <label for="startDate">Start Date:</label>
+          <input type="date" id="startDate" name="startDate" required>
+        </div>
+        <div class="form-group">
+          <label for="endDate">End Date:</label>
+          <input type="date" id="endDate" name="endDate" required>
+        </div>
+        <div class="form-group">
+          <label for="preferences">Preferences:</label>
+          <textarea id="preferences" name="preferences" placeholder="Enter your travel preferences here..."></textarea>
+        </div>
+        <button type="submit">Plan Itinerary</button>
+      </form>
+    </div>
+
+    <!-- Apple Maps Container -->
+    <div class="container map-container" id="mapContainer">
+      <h2>Map of Destination</h2>
+      <div id="map"></div>
+    </div>
+
+    <!-- Room Booking Section -->
+    <div class="container room-booking" id="roomBookingContainer">
+      <h2>Room Booking Options</h2>
+      <p>Choose a room option for your stay at <span id="destinationName"></span>:</p>
+      <button onclick="bookRoom('Standard Room')">Book Standard Room</button>
+      <button onclick="bookRoom('Deluxe Room')">Book Deluxe Room</button>
+      <button onclick="bookRoom('Suite')">Book Suite</button>
+    </div>
+  </div>
+
+  <script>
+    // In-memory user storage (for demo purposes)
+    let users = {};
+
+    function showSignup() {
+      document.getElementById('signupContainer').style.display = 'block';
+      document.getElementById('loginContainer').style.display = 'none';
+    }
+
+    function showLogin() {
+      document.getElementById('signupContainer').style.display = 'none';
+      document.getElementById('loginContainer').style.display = 'block';
+    }
+
+    // Handle Signup Form Submission
+    document.getElementById('signupForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const username = document.getElementById('signupUsername').value;
+      const password = document.getElementById('signupPassword').value;
+
+      if (users[username]) {
+        alert('Username already exists.');
+      } else {
+        users[username] = password;
+        alert('Account created successfully! Please log in.');
+        showLogin();
+      }
+    });
+
+    // Handle Login Form Submission
+    document.getElementById('loginForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const username = document.getElementById('loginUsername').value;
+      const password = document.getElementById('loginPassword').value;
+
+      if (users[username] && users[username] === password) {
+        alert('Login successful!');
+        document.getElementById('signupContainer').style.display = 'none';
+        document.getElementById('loginContainer').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+      } else {
+        alert('Incorrect username or password.');
+      }
+    });
+
+    // Handle Itinerary Form Submission
+    document.getElementById('itineraryForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const destination = document.getElementById('destination').value;
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      const preferences = document.getElementById('preferences').value;
+
+      alert(`Itinerary planned for ${destination} from ${startDate} to ${endDate} with preferences: ${preferences}`);
+      showMap(destination);
+      document.getElementById('destinationName').textContent = destination;
+      document.getElementById('mapContainer').style.display = 'block';
+      document.getElementById('roomBookingContainer').style.display = 'block';
+    });
+
+    // Function to initialize Apple Map
+    function showMap(destination) {
+      mapkit.init({
+        authorizationCallback: function(done) {
+          done('YOUR_MAPKIT_JS_TOKEN'); // Replace with a valid Apple MapKit JS token
+        }
+      });
+
+      const map = new mapkit.Map("map");
+      const geocoder = new mapkit.Geocoder();
+      geocoder.lookup(destination, (error, data) => {
+        if (!error && data.results.length > 0) {
+          const coordinate = data.results[0].coordinate;
+          map.region = new mapkit.CoordinateRegion(
+            new mapkit.Coordinate(coordinate.latitude, coordinate.longitude),
+            new mapkit.CoordinateSpan(0.1, 0.1)
+          );
+        } else {
+          alert("Destination not found on map.");
+        }
+      });
+    }
+
+    // Room booking function
+    function bookRoom(roomType) {
+      alert(`You have selected to book a ${roomType}`);
+    }
+  </script>
+</body>
+</html>
